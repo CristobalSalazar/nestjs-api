@@ -19,6 +19,7 @@ export class UsersService {
     const salt = await bcryptjs.genSalt(10);
     const hashedPassword = await bcryptjs.hash(dto.password, salt);
     user.password = hashedPassword;
-    return await this.userModel.create(user);
+    await this.userModel.create(user);
+    return await this.userModel.findOne({ email: user.email });
   }
 }

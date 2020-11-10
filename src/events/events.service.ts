@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { isValidObjectId, Model, Types } from 'mongoose';
-import { User } from 'src/users/user.schema';
+import { Model, Types } from 'mongoose';
 import { CreateEventDto } from './dto/create-event.dto';
 import { UpdateEventDto } from './dto/update-event.dto';
 import { Event, EventDocument } from './entities/event.entity';
@@ -12,12 +11,14 @@ export class EventsService {
     @InjectModel(Event.name) private eventModel: Model<EventDocument>,
   ) {}
 
-  create(createEventDto: CreateEventDto, uid: string) {
+  async create(createEventDto: CreateEventDto, uid: string) {
     const event = new Event();
     event.title = createEventDto.title;
     event.description = createEventDto.description;
     event.start = new Date(createEventDto.start);
     event.end = new Date(createEventDto.end);
+    event.user = Types.ObjectId(uid);
+    return await this.eventModel.create(event);
   }
 
   async findAll(uid: string) {
@@ -44,6 +45,10 @@ export class EventsService {
   }
 
   async remove(id: string, uid: string) {
-    const result = await this.eventModel.remove({ _id: Types.ObjectId });
+    const result = await this.eventModel.remove({
+      _id: Types.ObjectId(id),
+      user: Types.ObjectId(uid),
+    });
+    return result;
   }
 }

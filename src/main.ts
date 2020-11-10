@@ -4,6 +4,7 @@ import * as helmet from 'helmet';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { PasswordInterceptor } from './password.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,6 +14,7 @@ async function bootstrap() {
 
   app.use(helmet());
   app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalInterceptors(new PasswordInterceptor());
   const port = app.get(ConfigService).get('PORT', 3000);
 
   await app.listen(port);

@@ -3,7 +3,7 @@ import { Types, Document } from 'mongoose';
 import { User } from 'src/users/user.schema';
 
 export type EventDocument = Event & Document;
-@Schema()
+@Schema({ timestamps: true })
 export class Event {
   @Prop({ required: true })
   title: string;
@@ -17,7 +17,7 @@ export class Event {
   @Prop({ required: true })
   end: Date;
 
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: User.name, required: true, hide: true })
   user: User | Types.ObjectId;
 }
 
