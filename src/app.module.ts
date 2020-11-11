@@ -1,12 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { InjectConnection, MongooseModule } from '@nestjs/mongoose';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
-import { EmailController } from './email/email.controller';
-import { EmailService } from './email/email.service';
-import { EmailModule } from './email/email.module';
 import * as mongooseHidden from 'mongoose-hidden';
 
 @Module({
@@ -35,9 +32,6 @@ import * as mongooseHidden from 'mongoose-hidden';
       },
     }),
     EventsModule,
-    EmailModule,
   ],
-  controllers: [EmailController],
-  providers: [EmailService],
 })
 export class AppModule {}

@@ -9,7 +9,13 @@ import { UserDocument } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcryptjs';
-import { EmailService } from 'src/email/email.service';
+import { InjectModel } from '@nestjs/mongoose';
+import {
+  EmailVerification,
+  EmailVerificationDocument,
+} from './entities/email-verification.entity';
+import { Model, Types } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 export type AuthToken = { _id: string };
 
@@ -18,7 +24,8 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
-    private readonly emailService: EmailService,
+    @InjectModel(EmailVerification.name)
+    private readonly emailVerificationModel: Model<EmailVerificationDocument>,
   ) {}
 
   async validateUser(
@@ -32,18 +39,29 @@ export class AuthService {
     return null;
   }
 
+  async createEmailVerificationDocument(uid: string) {
+    return await this.emailVerificationModel.create({
+      user: Types.ObjectId(uid),
+      uuid: uuidv4(),
+    });
+  }
+
   async verifyEmail(uuid: string) {
-    const emailVerification = await this.emailService.findOneEmailVerificationByUuid(
+    const emailVerification = await this.emailVerificationModel.findOne({
       uuid,
-    );
+    });
     if (!emailVerification) {
       throw new NotFoundException();
     }
-    const user = await this.usersService.findOneById(emailVerification.user);
+    const user = await this.usersService.findOneById(
+      emailVerification.user.toString(),
+    );
+
     if (!user) {
       await emailVerification.remove();
       throw new NotFoundException();
     } else {
+      await emailVerification.remove();
       return await user.update({ emailVerified: true });
     }
   }
@@ -72,6 +90,8 @@ export class AuthService {
     if (userExists) {
       throw new BadRequestException('User with email already exists');
     }
-    return await this.usersService.create(dto);
+    const user = await this.usersService.create(dto);
+    await this.createEmailVerificationDocument(user._id);
+    return user;
   }
 }

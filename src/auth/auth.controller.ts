@@ -24,7 +24,8 @@ export class AuthController {
 
   @Get('verify-email/:uuid')
   async verifyEmail(@Param('uuid') uuid: string) {
-    return await this.authService.verifyEmail(uuid);
+    const { ok } = await this.authService.verifyEmail(uuid);
+    return { ok };
   }
 
   @UseGuards(AuthGuard('local'))

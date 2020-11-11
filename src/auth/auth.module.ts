@@ -7,12 +7,29 @@ import { AuthController } from './auth.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './jwt.strategy';
 import { ConfigService } from '@nestjs/config';
-import { EmailModule } from 'src/email/email.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import {
+  EmailVerification,
+  EmailVerificationSchema,
+} from './entities/email-verification.entity';
+import {
+  PasswordReset,
+  PasswordResetSchema,
+} from './entities/password-reset.entity';
 
 @Module({
   imports: [
+    MongooseModule.forFeature([
+      {
+        name: EmailVerification.name,
+        schema: EmailVerificationSchema,
+      },
+      {
+        name: PasswordReset.name,
+        schema: PasswordResetSchema,
+      },
+    ]),
     UsersModule,
-    EmailModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -20,7 +37,7 @@ import { EmailModule } from 'src/email/email.module';
         return {
           secret: config.get('APP_KEY'),
           signOptions: {
-            expiresIn: '1h',
+            expiresIn: '3h',
           },
         };
       },
