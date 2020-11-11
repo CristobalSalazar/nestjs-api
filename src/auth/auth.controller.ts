@@ -1,10 +1,10 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   Get,
+  HttpCode,
+  Param,
   Post,
-  Req,
   Request,
   Response,
   UseGuards,
@@ -12,26 +12,29 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
-import { Request as ExpressRequest } from 'express';
+import { Response as ExpressResponse } from 'express';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private configService: ConfigService,
+  ) {}
+
+  @Get('verify-email/:uuid')
+  async verifyEmail(@Param('uuid') uuid: string) {
+    return await this.authService.verifyEmail(uuid);
+  }
 
   @UseGuards(AuthGuard('local'))
+  @HttpCode(200)
   @Post('login')
   async login(@Request() req, @Response() res) {
     const { refresh_token, access_token } = await this.authService.login(
       req.user,
     );
-    const cookieOpts = {
-      httpOnly: true,
-      secure: true,
-      sameSite: true,
-    };
-    res.cookie('rt', refresh_token, cookieOpts);
-    res.cookie('at', access_token, cookieOpts);
-    res.json({ access_token, refresh_token });
+    this.sendAuthTokens(res, refresh_token, access_token);
   }
 
   @Post('register')
@@ -41,18 +44,44 @@ export class AuthController {
 
   @UseGuards(AuthGuard('jwt'))
   @Get('refresh')
-  async refresh(@Request() request) {
-    const cookie = request.cookies['rt'];
-    if (!cookie) {
-      throw new BadRequestException();
-    } else {
-      return cookie;
-    }
+  async refresh(@Request() req, @Response() res) {
+    const {
+      access_token,
+      refresh_token,
+    } = await this.authService.refreshTokens(
+      req.user,
+      req.cookies.access_token,
+    );
+    this.sendAuthTokens(res, refresh_token, access_token);
   }
 
   @UseGuards(AuthGuard('jwt'))
-  @Get('user')
+  @Get('token')
   async getUser(@Request() req) {
     return req.user;
+  }
+
+  private getCookieSettings() {
+    return this.configService.get<string>('NODE_ENV') === 'production'
+      ? {
+          httpOnly: true,
+          secure: true,
+          sameSite: true,
+        }
+      : {
+          httpOnly: true,
+        };
+  }
+
+  private sendAuthTokens(
+    res: ExpressResponse,
+    refresh_token: string,
+    access_token: string,
+  ) {
+    const settings = this.getCookieSettings();
+    res.cookie('refresh_token', refresh_token, settings);
+    res.cookie('access_token', access_token, settings);
+    // Should be stored in memory on client side not in local or session storage
+    res.json({ access_token });
   }
 }

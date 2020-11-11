@@ -9,8 +9,11 @@ import * as bcryptjs from 'bcryptjs';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findOne(email: string) {
+  async findOneByEmail(email: string) {
     return await this.userModel.findOne({ email });
+  }
+  async findOneById(_id: string) {
+    return await this.userModel.findOne({ _id: Types.ObjectId(_id) });
   }
 
   async deleteOne(id: string) {

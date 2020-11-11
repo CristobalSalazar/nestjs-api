@@ -11,12 +11,10 @@ async function bootstrap() {
   const options = new DocumentBuilder().setTitle('My Api').build();
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('/', app, document);
-
   app.use(helmet());
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe());
   const port = app.get(ConfigService).get('PORT', 3000);
-
   await app.listen(port);
 }
 bootstrap();
