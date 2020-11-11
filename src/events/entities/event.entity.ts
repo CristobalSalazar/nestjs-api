@@ -1,8 +1,9 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types, Document } from 'mongoose';
-import { User } from 'src/users/user.schema';
+import { User } from '../../users/entities/user.entity';
 
 export type EventDocument = Event & Document;
+
 @Schema({ timestamps: true })
 export class Event {
   @Prop({ required: true })

@@ -51,4 +51,11 @@ export class EventsService {
     });
     return result;
   }
+
+  async removeAll(uid: string) {
+    const result = await this.eventModel.remove({
+      user: Types.ObjectId(uid),
+    });
+    return result;
+  }
 }

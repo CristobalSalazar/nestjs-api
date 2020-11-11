@@ -4,7 +4,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { UserDocument } from '../users/user.schema';
+import { UserDocument } from '../users/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { RegisterDto } from './dto/register.dto';
 import * as bcrypt from 'bcryptjs';
@@ -21,6 +21,9 @@ export class AuthService {
     password: string,
   ): Promise<UserDocument | null> {
     const user = await this.usersService.findOne(email);
+    if (!user) {
+      return null;
+    }
     const passwordsMatch = await bcrypt.compare(password, user.password);
     if (passwordsMatch) {
       return user;
@@ -30,9 +33,11 @@ export class AuthService {
 
   async login(user: UserDocument) {
     const { email, _id } = user;
-    return {
-      token: this.jwtService.sign({ _id, email }),
-    };
+    const access_token = this.jwtService.sign({ _id, email });
+    const refreshToken = this.jwtService.sign({ _id, email });
+    // update refreshToken
+    await user.update({ refreshToken });
+    return { access_token, refresh_token: refreshToken };
   }
 
   async register(dto: RegisterDto) {

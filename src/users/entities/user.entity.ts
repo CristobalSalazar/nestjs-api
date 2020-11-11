@@ -1,10 +1,12 @@
 import { Prop, raw, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
-
 export type UserDocument = User & Document;
 
 @Schema({ timestamps: true })
 export class User {
+  @Prop({ required: true })
+  name: string;
+
   @Prop({ required: true, unique: true, trim: true })
   email: string;
 
@@ -12,7 +14,8 @@ export class User {
   password: string;
 
   @Prop({ default: false })
-  emailVerified: boolean;
-}
+  emailVerified: boolean = false;
 
-export const UserSchema = SchemaFactory.createForClass(User);
+  @Prop()
+  refreshToken: string;
+}
