@@ -14,7 +14,7 @@ describe('AuthController', () => {
     expect(controller).toBeDefined();
   });
 
-  it('should register user', () => {
+  it('should register user', async () => {
     try {
       const result = await controller.register({
         email: 'test@test.com',
