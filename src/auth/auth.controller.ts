@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Logger,
   Param,
   Post,
   Put,
@@ -17,11 +18,15 @@ import { RegisterDto } from './dto/register.dto';
 import { Response as ExpressResponse } from 'express';
 import { PasswordResetDto } from './dto/password-reset.dto';
 import { RateLimit, RateLimiterInterceptor } from 'nestjs-rate-limiter';
+import { VerifiedEmailGuard } from 'src/verified-email.guard';
 
 @UseInterceptors(RateLimiterInterceptor)
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  private logger: Logger;
+  constructor(private readonly authService: AuthService) {
+    this.logger = new Logger('auth_controller');
+  }
 
   @RateLimit({ points: 1, duration: 3 })
   @Post('password-reset')
@@ -41,8 +46,7 @@ export class AuthController {
   @RateLimit({ points: 1, duration: 3 })
   @Get('verify-email/:uuid')
   async verifyEmail(@Param('uuid') uuid: string) {
-    const user = await this.authService.verifyEmail(uuid);
-    return { ok: user.emailVerified ? 1 : 0 };
+    return await this.authService.verifyEmail(uuid);
   }
 
   @RateLimit({ points: 1, duration: 3 })
@@ -51,7 +55,7 @@ export class AuthController {
     return await this.authService.register(registerDto);
   }
 
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(AuthGuard('local'), VerifiedEmailGuard)
   @HttpCode(200)
   @Post('login')
   async login(@Request() req, @Response() res) {
