@@ -30,21 +30,21 @@ export class EventsController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Request() requset) {
-    return this.eventsService.findOne(id, requset.user._id);
+  findOne(@Param('id') id: string, @Request() request) {
+    return this.eventsService.findOne(id, request.user._id);
   }
 
   @Put(':id')
   update(
     @Param('id') id: string,
     @Body() updateEventDto: UpdateEventDto,
-    @Request() requset,
+    @Request() request,
   ) {
-    return this.eventsService.update(id, requset.user._id, updateEventDto);
+    return this.eventsService.update(id, request.user._id, updateEventDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Request() requset) {
-    return this.eventsService.remove(id, requset.user._id);
+  remove(@Param('id') id: string, @Request() request) {
+    return this.eventsService.remove(id, request.user._id);
   }
 }

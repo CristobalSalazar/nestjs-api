@@ -22,6 +22,14 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
+  @Post('password-reset/:uuid')
+  async passwordReset(
+    @Body('password') newPassword: string,
+    @Param('uuid') uuid: string,
+  ) {
+    return await this.authService.passwordReset(uuid, newPassword);
+  }
+
   @Get('verify-email/:uuid')
   async verifyEmail(@Param('uuid') uuid: string) {
     const { ok } = await this.authService.verifyEmail(uuid);

@@ -13,17 +13,20 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   EmailVerification,
   EmailVerificationDocument,
+  EmailVerificationType,
 } from './entities/email-verification.entity';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import { EmailVerificationService } from './email-verification.service';
 
-export type AuthToken = { _id: string };
+export type AuthTokenPayload = { _id: string };
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly emailVerificationService: EmailVerificationService,
     @InjectModel(EmailVerification.name)
     private readonly emailVerificationModel: Model<EmailVerificationDocument>,
   ) {}
@@ -32,43 +35,46 @@ export class AuthService {
     email: string,
     password: string,
   ): Promise<UserDocument | null> {
-    const user = await this.usersService.findOneByEmail(email);
+    const user = await this.usersService.findByEmail(email);
     if (!user) return null;
     const passwordsMatch = await bcrypt.compare(password, user.password);
     if (passwordsMatch) return user;
     return null;
   }
 
-  async createEmailVerificationDocument(uid: string) {
+  async createEmailVerification(uid: string, type: EmailVerificationType) {
     return await this.emailVerificationModel.create({
-      user: Types.ObjectId(uid),
+      type,
+      user: uid,
       uuid: uuidv4(),
     });
   }
 
-  async verifyEmail(uuid: string) {
-    const emailVerification = await this.emailVerificationModel.findOne({
+  async passwordReset(uuid: string, newPassword: string) {
+    const emailVerification = await this.emailVerificationService.getEmailVerification(
       uuid,
-    });
-    if (!emailVerification) {
-      throw new NotFoundException();
-    }
-    const user = await this.usersService.findOneById(
-      emailVerification.user.toString(),
+      'password_reset',
     );
-
-    if (!user) {
-      await emailVerification.remove();
-      throw new NotFoundException();
-    } else {
-      await emailVerification.remove();
-      return await user.update({ emailVerified: true });
-    }
+    return await this.usersService.updatePassword(
+      emailVerification.user,
+      newPassword,
+    );
   }
 
-  async refreshTokens(tokenPayload: AuthToken, refreshToken: string) {
-    const { _id } = tokenPayload;
-    const user = await this.usersService.findOneById(_id);
+  async verifyEmail(uuid: string) {
+    const emailVerification = await this.emailVerificationService.getEmailVerification(
+      uuid,
+      'email_confirmation',
+    );
+    return this.usersService.setEmailAsVerified(emailVerification.user);
+  }
+
+  async refreshTokens(
+    authTokenPayload: AuthTokenPayload,
+    refreshToken: string,
+  ) {
+    const { _id } = authTokenPayload;
+    const user = await this.usersService.findById(_id);
     if (!user) throw new NotFoundException();
     if (user.refreshToken !== refreshToken) throw new UnauthorizedException();
     const access_token = this.jwtService.sign({ _id });
@@ -86,12 +92,12 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const userExists = await this.usersService.findOneByEmail(dto.email);
+    const userExists = await this.usersService.findByEmail(dto.email);
     if (userExists) {
       throw new BadRequestException('User with email already exists');
     }
     const user = await this.usersService.create(dto);
-    await this.createEmailVerificationDocument(user._id);
+    await this.createEmailVerification(user._id, 'email_confirmation');
     return user;
   }
 }

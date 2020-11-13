@@ -9,11 +9,12 @@ import * as bcryptjs from 'bcryptjs';
 export class UsersService {
   constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
 
-  async findOneByEmail(email: string) {
-    return await this.userModel.findOne({ email });
+  async findByEmail(email: string) {
+    return this.userModel.findOne({ email });
   }
-  async findOneById(_id: string) {
-    return await this.userModel.findOne({ _id: Types.ObjectId(_id) });
+
+  async findById(id: string) {
+    return this.userModel.findById(id);
   }
 
   async deleteOne(id: string) {
@@ -28,5 +29,17 @@ export class UsersService {
     user.password = await bcryptjs.hash(dto.password, salt);
     user.name = dto.name;
     return await this.userModel.create(user);
+  }
+
+  async setEmailAsVerified(id: string) {
+    return this.userModel.findByIdAndUpdate(id, { emailVerified: true });
+  }
+
+  async updatePassword(id: string, newPassword: string) {
+    const salt = await bcryptjs.genSalt(10);
+    const user = await this.userModel.findById(id);
+    if (!user) throw new NotFoundException();
+    user.password = await bcryptjs.hash(newPassword, salt);
+    return await user.save();
   }
 }
