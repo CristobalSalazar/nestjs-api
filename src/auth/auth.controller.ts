@@ -9,45 +9,46 @@ import {
   Request,
   Response,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { Response as ExpressResponse } from 'express';
-import { ConfigService } from '@nestjs/config';
 import { PasswordResetDto } from './dto/password-reset.dto';
-import { EmailService } from '../email/email.service';
+import { RateLimit, RateLimiterInterceptor } from 'nestjs-rate-limiter';
 
+@UseInterceptors(RateLimiterInterceptor)
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-    private readonly configService: ConfigService,
-    private readonly emailService: EmailService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
+  @RateLimit({ points: 1, duration: 3 })
   @Post('password-reset')
   async createPasswordReset(@Body() dto: PasswordResetDto) {
-    const { uuid } = await this.authService.createPasswordReset(dto);
-    const result = await this.emailService.sendPasswordResetEmail(
-      dto.email,
-      `http://localhost:3000/password-reset/${uuid}`,
-    );
-    return result;
+    return await this.authService.requestPasswordReset(dto);
   }
 
+  @RateLimit({ points: 1, duration: 3 })
   @Put('password-reset/:uuid')
   async passwordReset(
     @Body('password') newPassword: string,
     @Param('uuid') uuid: string,
   ) {
-    return await this.authService.passwordReset(uuid, newPassword);
+    return await this.authService.resetPassword(uuid, newPassword);
   }
 
+  @RateLimit({ points: 1, duration: 3 })
   @Get('verify-email/:uuid')
   async verifyEmail(@Param('uuid') uuid: string) {
     const user = await this.authService.verifyEmail(uuid);
-    return { ok: user.emailVerified };
+    return { ok: user.emailVerified ? 1 : 0 };
+  }
+
+  @RateLimit({ points: 1, duration: 3 })
+  @Post('register')
+  async register(@Body() registerDto: RegisterDto) {
+    return await this.authService.register(registerDto);
   }
 
   @UseGuards(AuthGuard('local'))
@@ -58,11 +59,6 @@ export class AuthController {
       req.user,
     );
     this.sendAuthTokens(res, refresh_token, access_token);
-  }
-
-  @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return await this.authService.register(registerDto);
   }
 
   @UseGuards(AuthGuard('jwt'))
@@ -84,24 +80,12 @@ export class AuthController {
     return req.user;
   }
 
-  private getCookieSettings() {
-    return this.configService.get<string>('NODE_ENV') === 'production'
-      ? {
-          httpOnly: true,
-          secure: true,
-          sameSite: true,
-        }
-      : {
-          httpOnly: true,
-        };
-  }
-
   private sendAuthTokens(
     res: ExpressResponse,
     refresh_token: string,
     access_token: string,
   ) {
-    const settings = this.getCookieSettings();
+    const settings = this.authService.getCookieSettings();
     res.cookie('refresh_token', refresh_token, settings);
     res.cookie('access_token', access_token, settings);
     // Should be stored in memory on client side not in local or session storage

@@ -14,9 +14,11 @@ import {
 } from './entities/email-verification.entity';
 import { EmailVerificationService } from './email-verification.service';
 import { EmailModule } from '../email/email.module';
+import { RateLimiterModule } from 'nestjs-rate-limiter';
 
 @Module({
   imports: [
+    RateLimiterModule,
     MongooseModule.forFeature([
       {
         name: EmailVerification.name,

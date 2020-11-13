@@ -2,13 +2,18 @@
   "collection": "@nestjs/schematics",
   "sourceRoot": "src",
   "compilerOptions": {
+    "assets": [
+      "**/*.eta"
+    ],
+    "watchAssets": true,
     "plugins": [
       {
         "name": "@nestjs/swagger",
         "options": {
           "dtoFileNameSuffix": [
             ".dto.ts",
-            ".schema.ts"
+            ".schema.ts",
+            ".entity.ts"
           ]
         }
       }

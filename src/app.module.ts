@@ -5,18 +5,25 @@ import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
 import { EmailModule } from './email/email.module';
+import { PostsModule } from './posts/posts.module';
+import { ProfilesModule } from './profiles/profiles.module';
 import * as mongooseHidden from 'mongoose-hidden';
 
 @Module({
   imports: [
     AuthModule,
-    ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
+    EventsModule,
+    EmailModule,
+    ConfigModule.forRoot({ isGlobal: true }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory(configService: ConfigService) {
         return {
-          uri: configService.get('CONNECTION_STRING'),
+          uri: configService.get(
+            'CONNECTION_STRING',
+            'mongodb://localhost/nestjs',
+          ),
           useNewUrlParser: true,
           useUnifiedTopology: true,
           connectionFactory(connection) {
@@ -32,8 +39,8 @@ import * as mongooseHidden from 'mongoose-hidden';
         };
       },
     }),
-    EventsModule,
-    EmailModule,
+    PostsModule,
+    ProfilesModule,
   ],
 })
 export class AppModule {}
