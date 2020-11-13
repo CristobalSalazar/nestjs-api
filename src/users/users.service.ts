@@ -7,10 +7,18 @@ import * as bcryptjs from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name)
+    private readonly userModel: Model<UserDocument>,
+  ) {}
 
   async findByEmail(email: string) {
-    return this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({ email });
+    if (!user) {
+      throw new NotFoundException();
+    } else {
+      return user;
+    }
   }
 
   async findById(id: string) {
