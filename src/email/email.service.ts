@@ -3,7 +3,7 @@ import { EmailClientToken } from './email.client';
 import Mail from 'nodemailer/lib/mailer';
 import { ConfigService } from '@nestjs/config';
 import * as eta from 'eta';
-import path from 'path';
+import * as path from 'path';
 
 @Injectable()
 export class EmailService {

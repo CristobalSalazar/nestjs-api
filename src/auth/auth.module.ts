@@ -13,7 +13,7 @@ import {
   EmailVerificationSchema,
 } from './entities/email-verification.entity';
 import { EmailVerificationService } from './email-verification.service';
-import { EmailService } from '../email/email.service';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -24,6 +24,7 @@ import { EmailService } from '../email/email.service';
       },
     ]),
     UsersModule,
+    EmailModule,
     PassportModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
@@ -42,7 +43,6 @@ import { EmailService } from '../email/email.service';
     LocalStrategy,
     JwtStrategy,
     EmailVerificationService,
-    EmailService,
   ],
   controllers: [AuthController],
 })

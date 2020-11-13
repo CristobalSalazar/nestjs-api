@@ -16,18 +16,24 @@ import { RegisterDto } from './dto/register.dto';
 import { Response as ExpressResponse } from 'express';
 import { ConfigService } from '@nestjs/config';
 import { PasswordResetDto } from './dto/password-reset.dto';
+import { EmailService } from '../email/email.service';
 
 @Controller('auth')
 export class AuthController {
   constructor(
-    private authService: AuthService,
-    private configService: ConfigService,
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+    private readonly emailService: EmailService,
   ) {}
 
   @Post('password-reset')
-  async createPasswordReset(@Body() passwordResetDto: PasswordResetDto) {
-    await this.authService.createPasswordReset(passwordResetDto);
-    return { ok: 1 };
+  async createPasswordReset(@Body() dto: PasswordResetDto) {
+    const { uuid } = await this.authService.createPasswordReset(dto);
+    const result = await this.emailService.sendPasswordResetEmail(
+      dto.email,
+      `http://localhost:3000/password-reset/${uuid}`,
+    );
+    return result;
   }
 
   @Put('password-reset/:uuid')
