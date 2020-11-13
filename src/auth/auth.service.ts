@@ -38,14 +38,9 @@ export class AuthService {
   }
 
   async requestPasswordReset({ email }: PasswordResetDto) {
-    const user = await this.usersService.findByEmail(email);
-    const verification = await this.emailVerificationService.get(
-      user._id,
-      'password_reset',
-    );
-    if (verification) await verification.remove();
+    const uid = await this.usersService.getIdFromEmail(email);
     const { uuid } = await this.emailVerificationService.create(
-      user._id,
+      uid,
       'password_reset',
     );
     return await this.emailService.sendPasswordResetEmail({
@@ -59,8 +54,16 @@ export class AuthService {
       uuid,
       'password_reset',
     );
-    await this.usersService.updatePassword(emailVerification.user, newPassword);
-    await emailVerification.remove();
+    const user = await this.usersService.findById(emailVerification.user);
+    if (!user.emailVerified) {
+      throw new UnauthorizedException(
+        'Email is not verified. Please verify your email before attempting to reset your password',
+      );
+    }
+    await Promise.all([
+      this.usersService.updatePassword(user, newPassword),
+      this.emailVerificationService.removeAllForUser(user._id),
+    ]);
     return { ok: 1 };
   }
 
@@ -69,7 +72,11 @@ export class AuthService {
       uuid,
       'email_confirmation',
     );
-    return await this.usersService.setEmailAsVerified(emailVerification.user);
+    const user = await this.usersService.setEmailAsVerified(
+      emailVerification.user,
+    );
+    await emailVerification.remove();
+    return { ok: 1 };
   }
 
   async refreshTokens(
@@ -107,7 +114,11 @@ export class AuthService {
         recipients: [dto.email],
         link: `http://localhost:3000/verify-email/${uuid}`,
       });
-      return user;
+      if (this.configService.get('NODE_ENV', 'development') === 'development') {
+        return uuid;
+      } else {
+        return user;
+      }
     }
     throw new BadRequestException('User with email already exists.');
   }
