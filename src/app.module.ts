@@ -4,6 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { EventsModule } from './events/events.module';
+import { EmailModule } from './email/email.module';
 import * as mongooseHidden from 'mongoose-hidden';
 
 @Module({
@@ -32,6 +33,7 @@ import * as mongooseHidden from 'mongoose-hidden';
       },
     }),
     EventsModule,
+    EmailModule,
   ],
 })
 export class AppModule {}
