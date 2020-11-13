@@ -17,6 +17,7 @@ import {
 import { Model } from 'mongoose';
 import { EmailVerificationService } from './email-verification.service';
 import { PasswordResetDto } from './dto/password-reset.dto';
+import { EmailService } from '../email/email.service';
 
 export type AuthTokenPayload = { _id: string };
 
@@ -26,6 +27,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly emailVerificationService: EmailVerificationService,
+    private readonly emailService: EmailService,
     @InjectModel(EmailVerification.name)
     private readonly emailVerificationModel: Model<EmailVerificationDocument>,
   ) {}
@@ -47,11 +49,9 @@ export class AuthService {
       user._id,
       'password_reset',
     );
-
     if (alreadyExists) {
       throw new BadRequestException('password recovery email already sent');
     }
-
     return await this.emailVerificationService.createEmailVerification(
       user._id,
       'password_reset',

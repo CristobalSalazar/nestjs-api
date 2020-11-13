@@ -20,6 +20,10 @@ export class EmailService {
     return this.sendEmailTemplate('password-reset', { link }, [recipient]);
   }
 
+  async sendVerificationEmail(recipient: string, link: string) {
+    return this.sendEmailTemplate('email-verification', { link }, [recipient]);
+  }
+
   private async sendEmailTemplate(
     template: string,
     data: any,

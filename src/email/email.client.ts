@@ -5,15 +5,15 @@ export const EmailClientToken = 'EMAIL_CLIENT';
 export const EmailClientFactory = {
   provide: EmailClientToken,
   inject: [ConfigService],
-  async useFactory(configService: ConfigService) {
+  async useFactory(config: ConfigService) {
     const testAccount = await nodemailer.createTestAccount();
     return nodemailer.createTransport({
-      host: configService.get('EMAIL_HOST', 'smtp.ethereal.email'),
-      port: configService.get('EMAIL_PORT', 587),
+      host: config.get('EMAIL_HOST', 'smtp.ethereal.email'),
+      port: config.get('EMAIL_PORT', 587),
       secure: false,
       auth: {
-        user: configService.get('EMAIL_USER', testAccount.user),
-        pass: configService.get('EMAIL_PASS', testAccount.pass),
+        user: config.get('EMAIL_USER', testAccount.user),
+        pass: config.get('EMAIL_PASS', testAccount.pass),
       },
     });
   },

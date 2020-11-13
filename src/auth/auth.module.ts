@@ -13,6 +13,7 @@ import {
   EmailVerificationSchema,
 } from './entities/email-verification.entity';
 import { EmailVerificationService } from './email-verification.service';
+import { EmailService } from '../email/email.service';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { EmailVerificationService } from './email-verification.service';
     LocalStrategy,
     JwtStrategy,
     EmailVerificationService,
+    EmailService,
   ],
   controllers: [AuthController],
 })

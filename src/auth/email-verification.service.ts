@@ -17,6 +17,18 @@ export class EmailVerificationService {
     private readonly emailVerificationModel: Model<EmailVerificationDocument>,
   ) {}
 
+  async getEmailVerification(uuid: string, type: EmailVerificationType) {
+    const emailVerification = await this.emailVerificationModel.findOne({
+      uuid,
+      type,
+    });
+    if (!emailVerification) {
+      throw new NotFoundException();
+    } else {
+      return emailVerification;
+    }
+  }
+
   async createEmailVerification(uid: string, type: EmailVerificationType) {
     return await this.emailVerificationModel.create({
       type,
@@ -31,17 +43,5 @@ export class EmailVerificationService {
       type,
     });
     return !!verification;
-  }
-
-  async getEmailVerification(uuid: string, type: EmailVerificationType) {
-    const emailVerification = await this.emailVerificationModel.findOne({
-      uuid,
-      type,
-    });
-    if (!emailVerification) {
-      throw new NotFoundException();
-    } else {
-      return emailVerification;
-    }
   }
 }
