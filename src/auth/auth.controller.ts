@@ -5,6 +5,7 @@ import {
   HttpCode,
   Param,
   Post,
+  Put,
   Request,
   Response,
   UseGuards,
@@ -14,6 +15,7 @@ import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { Response as ExpressResponse } from 'express';
 import { ConfigService } from '@nestjs/config';
+import { PasswordResetDto } from './dto/password-reset.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -22,7 +24,13 @@ export class AuthController {
     private configService: ConfigService,
   ) {}
 
-  @Post('password-reset/:uuid')
+  @Post('password-reset')
+  async createPasswordReset(@Body() passwordResetDto: PasswordResetDto) {
+    await this.authService.createPasswordReset(passwordResetDto);
+    return { ok: 1 };
+  }
+
+  @Put('password-reset/:uuid')
   async passwordReset(
     @Body('password') newPassword: string,
     @Param('uuid') uuid: string,
@@ -32,8 +40,8 @@ export class AuthController {
 
   @Get('verify-email/:uuid')
   async verifyEmail(@Param('uuid') uuid: string) {
-    const { ok } = await this.authService.verifyEmail(uuid);
-    return { ok };
+    const user = await this.authService.verifyEmail(uuid);
+    return { ok: user.emailVerified };
   }
 
   @UseGuards(AuthGuard('local'))
