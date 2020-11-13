@@ -15,15 +15,18 @@ export class EmailVerificationService {
     private readonly emailVerificationModel: Model<EmailVerificationDocument>,
   ) {}
 
+  async removeAllForUser(uid: string) {
+    return await this.emailVerificationModel.remove({ user: uid });
+  }
   async get(uuid: string, type: EmailVerificationType) {
-    const emailVerification = await this.emailVerificationModel.findOne({
+    const verification = await this.emailVerificationModel.findOne({
       uuid,
       type,
     });
-    if (!emailVerification) {
-      throw new NotFoundException();
+    if (!verification) {
+      throw new NotFoundException('Unable to find Email Verification');
     } else {
-      return emailVerification;
+      return verification;
     }
   }
 

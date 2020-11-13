@@ -1,2 +1,2 @@
 <h1>Email Verification</h1>
-<p>Please click <a href="<%=link%>">here</a> to verify your email</p>
+<p>Please click <a href="<%=it.link%>">here</a> to verify your email</p>
