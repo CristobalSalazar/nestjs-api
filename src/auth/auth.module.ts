@@ -12,10 +12,7 @@ import {
   EmailVerification,
   EmailVerificationSchema,
 } from './entities/email-verification.entity';
-import {
-  PasswordReset,
-  PasswordResetSchema,
-} from './entities/password-reset.entity';
+import { EmailVerificationService } from './email-verification.service';
 
 @Module({
   imports: [
@@ -23,10 +20,6 @@ import {
       {
         name: EmailVerification.name,
         schema: EmailVerificationSchema,
-      },
-      {
-        name: PasswordReset.name,
-        schema: PasswordResetSchema,
       },
     ]),
     UsersModule,
@@ -43,7 +36,12 @@ import {
       },
     }),
   ],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    JwtStrategy,
+    EmailVerificationService,
+  ],
   controllers: [AuthController],
 })
 export class AuthModule {}
