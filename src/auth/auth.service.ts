@@ -13,11 +13,10 @@ import { InjectModel } from '@nestjs/mongoose';
 import {
   EmailVerification,
   EmailVerificationDocument,
-  EmailVerificationType,
 } from './entities/email-verification.entity';
 import { Model } from 'mongoose';
-import { v4 as uuidv4 } from 'uuid';
 import { EmailVerificationService } from './email-verification.service';
+import { PasswordResetDto } from './dto/password-reset.dto';
 
 export type AuthTokenPayload = { _id: string };
 
@@ -42,12 +41,21 @@ export class AuthService {
     return null;
   }
 
-  async createEmailVerification(uid: string, type: EmailVerificationType) {
-    return await this.emailVerificationModel.create({
-      type,
-      user: uid,
-      uuid: uuidv4(),
-    });
+  async createPasswordReset({ email }: PasswordResetDto) {
+    const user = await this.usersService.findByEmail(email);
+    const alreadyExists = await this.emailVerificationService.existsForUser(
+      user._id,
+      'password_reset',
+    );
+
+    if (alreadyExists) {
+      throw new BadRequestException('password recovery email already sent');
+    }
+
+    return await this.emailVerificationService.createEmailVerification(
+      user._id,
+      'password_reset',
+    );
   }
 
   async passwordReset(uuid: string, newPassword: string) {
@@ -55,10 +63,9 @@ export class AuthService {
       uuid,
       'password_reset',
     );
-    return await this.usersService.updatePassword(
-      emailVerification.user,
-      newPassword,
-    );
+    await this.usersService.updatePassword(emailVerification.user, newPassword);
+    await emailVerification.remove();
+    return { ok: 1 };
   }
 
   async verifyEmail(uuid: string) {
@@ -66,7 +73,7 @@ export class AuthService {
       uuid,
       'email_confirmation',
     );
-    return this.usersService.setEmailAsVerified(emailVerification.user);
+    return await this.usersService.setEmailAsVerified(emailVerification.user);
   }
 
   async refreshTokens(
@@ -92,12 +99,16 @@ export class AuthService {
   }
 
   async register(dto: RegisterDto) {
-    const userExists = await this.usersService.findByEmail(dto.email);
-    if (userExists) {
-      throw new BadRequestException('User with email already exists');
+    try {
+      await this.usersService.findByEmail(dto.email);
+    } catch (notFoundException) {
+      const user = await this.usersService.create(dto);
+      await this.emailVerificationService.createEmailVerification(
+        user._id,
+        'email_confirmation',
+      );
+      return user;
     }
-    const user = await this.usersService.create(dto);
-    await this.createEmailVerification(user._id, 'email_confirmation');
-    return user;
+    throw new BadRequestException('User with email already exists.');
   }
 }
